@@ -133,38 +133,39 @@ async def gerar_programa(dados: DadosProjeto):
 @app.post("/api/imagens/fachada")
 async def gerar_fachadas(dados: DadosImagem):
     """
-    Gera imagens fotorrealistas de fachada usando Flux Pro (Replicate)
+    Gera imagens fotorrealistas de fachada usando Flux Schnell (Replicate)
+    Referência: condomínios fechados alto padrão tipo Alphaville SP
     """
 
-    # Prompts por estilo — altamente detalhados para resultado fotorrealista
+    # Prompts com referência brasileira Alphaville
     prompts_estilo = {
         "neoclassico": (
-            "Neoclassical luxury Brazilian residential mansion, "
-            "ionic columns, symmetrical facade, natural limestone cladding, "
+            "Luxury neoclassical mansion in Alphaville Barueri Sao Paulo Brazil, "
+            "grand symmetrical facade, ionic columns, limestone cladding, "
             "ornate cornice moldings, arched windows with shutters, "
-            "grand entrance with double doors, manicured hedges, "
-            "cobblestone driveway"
+            "grand double door entrance, manicured tropical garden, "
+            "cobblestone driveway, palm trees, gated community"
         ),
         "contemporaneo": (
-            "Contemporary Brazilian luxury house, "
+            "Ultra modern luxury house in Alphaville Sao Paulo Brazil condominium, "
             "clean geometric volumes, floor-to-ceiling glass panels, "
-            "cantilevered upper floor, concrete and wood combination, "
-            "integrated landscape, infinity pool reflection, "
-            "architectural LED lighting, minimalist garden"
+            "cantilevered upper floor, concrete and dark wood cladding, "
+            "integrated tropical landscape, LED architectural lighting, "
+            "minimalist front garden, gated entrance"
         ),
         "classico": (
-            "Traditional Brazilian colonial mansion, "
+            "Classic luxury Brazilian colonial mansion Alphaville style, "
             "terracotta clay roof tiles, arched windows and doorways, "
-            "warm ochre painted stucco walls, wrought iron details, "
-            "mature tropical garden, ceramic tile accents, "
-            "wide covered veranda"
+            "warm beige painted facade, wrought iron details, "
+            "mature tropical garden with palm trees, wide covered veranda, "
+            "gated condominium Sao Paulo Brazil"
         ),
     }
 
     modificadores_padrao = {
-        "popular": "simple painted plaster finish, modest front garden",
-        "medio":   "quality ceramic cladding, well-maintained garden, aluminum windows",
-        "alto":    "premium marble and granite cladding, luxury landscaping, smart glass, LED accent lighting",
+        "popular": "well-maintained middle class house, ceramic tiles, simple garden",
+        "medio":   "upper middle class house, quality finishes, maintained tropical garden",
+        "alto":    "ultra luxury finishes, Italian marble cladding, designer landscaping, LED lighting, swimming pool visible",
     }
 
     modificadores_topo = {
@@ -190,13 +191,14 @@ async def gerar_fachadas(dados: DadosImagem):
     urls = []
     for i in range(dados.quantidade):
         try:
+            prompt_variacao = prompt_final + f", variation {i+1}, different angle and lighting"
             output = replicate.run(
                 "black-forest-labs/flux-schnell",
                 input={
-                    "prompt": prompt_final,
+                    "prompt": prompt_variacao,
                     "num_outputs": 1,
                     "num_inference_steps": 4,
-                    "seed": 1000 + (i * 777),
+                    "seed": 1000 + (i * 1337),
                     "output_format": "webp",
                     "output_quality": 90,
                     "go_fast": True,
@@ -204,13 +206,15 @@ async def gerar_fachadas(dados: DadosImagem):
                     "aspect_ratio": "16:9",
                 }
             )
-            # output pode ser lista ou FileOutput
-            if isinstance(output, list):
+            if isinstance(output, list) and len(output) > 0:
                 urls.append(str(output[0]))
-            else:
+            elif output:
                 urls.append(str(output))
+            else:
+                urls.append("")
         except Exception as e:
-            urls.append(f"ERRO: {str(e)}")
+            print(f"Erro imagem {i}: {str(e)}")
+            urls.append("")  # URL vazia, frontend mostra placeholder
 
     return {"urls": urls, "prompt_usado": prompt_final}
 
