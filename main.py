@@ -189,32 +189,27 @@ async def gerar_fachadas(dados: DadosImagem):
     )
 
     urls = []
-    for i in range(dados.quantidade):
-        try:
-            prompt_variacao = prompt_final + f", variation {i+1}, different angle and lighting"
-            output = replicate.run(
-                "black-forest-labs/flux-schnell",
-                input={
-                    "prompt": prompt_variacao,
-                    "num_outputs": 1,
-                    "num_inference_steps": 4,
-                    "seed": 1000 + (i * 1337),
-                    "output_format": "webp",
-                    "output_quality": 90,
-                    "go_fast": True,
-                    "megapixels": "1",
-                    "aspect_ratio": "16:9",
-                }
-            )
-            if isinstance(output, list) and len(output) > 0:
-                urls.append(str(output[0]))
-            elif output:
-                urls.append(str(output))
-            else:
-                urls.append("")
-        except Exception as e:
-            print(f"Erro imagem {i}: {str(e)}")
-            urls.append("")  # URL vazia, frontend mostra placeholder
+    try:
+        output = replicate.run(
+            "black-forest-labs/flux-schnell",
+            input={
+                "prompt": prompt_final,
+                "num_outputs": 4,
+                "num_inference_steps": 4,
+                "output_format": "webp",
+                "output_quality": 90,
+                "go_fast": True,
+                "megapixels": "1",
+                "aspect_ratio": "16:9",
+            }
+        )
+        if isinstance(output, list):
+            urls = [str(u) for u in output]
+        else:
+            urls = [str(output)]
+    except Exception as e:
+        print(f"Erro gerando imagens: {str(e)}")
+        urls = []
 
     return {"urls": urls, "prompt_usado": prompt_final}
 
