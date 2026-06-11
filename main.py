@@ -191,19 +191,24 @@ async def gerar_fachadas(dados: DadosImagem):
     for i in range(dados.quantidade):
         try:
             output = replicate.run(
-                "black-forest-labs/flux-pro",
+                "black-forest-labs/flux-schnell",
                 input={
                     "prompt": prompt_final,
-                    "width": 1440,
-                    "height": 960,
-                    "num_inference_steps": 50,
-                    "guidance": 3.5,
-                    "seed": 1000 + (i * 777),  # seeds diferentes = variações
+                    "num_outputs": 1,
+                    "num_inference_steps": 4,
+                    "seed": 1000 + (i * 777),
                     "output_format": "webp",
                     "output_quality": 90,
+                    "go_fast": True,
+                    "megapixels": "1",
+                    "aspect_ratio": "16:9",
                 }
             )
-            urls.append(str(output))
+            # output pode ser lista ou FileOutput
+            if isinstance(output, list):
+                urls.append(str(output[0]))
+            else:
+                urls.append(str(output))
         except Exception as e:
             urls.append(f"ERRO: {str(e)}")
 
@@ -248,19 +253,23 @@ async def gerar_internas(dados: DadosImagem):
         )
         try:
             output = replicate.run(
-                "black-forest-labs/flux-pro",
+                "black-forest-labs/flux-schnell",
                 input={
                     "prompt": prompt,
-                    "width": 1440,
-                    "height": 960,
-                    "num_inference_steps": 50,
-                    "guidance": 3.5,
+                    "num_outputs": 1,
+                    "num_inference_steps": 4,
                     "seed": 2000 + len(urls) * 333,
                     "output_format": "webp",
                     "output_quality": 90,
+                    "go_fast": True,
+                    "megapixels": "1",
+                    "aspect_ratio": "16:9",
                 }
             )
-            urls.append({"ambiente": ambiente_id, "url": str(output)})
+            if isinstance(output, list):
+                urls.append({"ambiente": ambiente_id, "url": str(output[0])})
+            else:
+                urls.append({"ambiente": ambiente_id, "url": str(output)})
         except Exception as e:
             urls.append({"ambiente": ambiente_id, "url": f"ERRO: {str(e)}"})
 
