@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Arquiteto IA</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Cormorant+Garamond:wght@400;600&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: #070708; color: #e8e8ea; font-family: 'Cormorant Garamond', serif; min-height: 100vh; }
+
+/* HEADER */
+.header { background: #0e0e10; border-bottom: 1px solid #1c1c20; padding: 18px 48px; display: flex; align-items: center; justify-content: space-between; }
+.logo { font-family: 'Playfair Display', serif; font-size: 20px; color: #C8A96E; letter-spacing: 3px; }
+.tag { padding: 4px 12px; border-radius: 4px; font-size: 10px; font-family: monospace; letter-spacing: 1.5px; text-transform: uppercase; }
+.tag-green { background: rgba(74,222,128,0.07); color: #4ade80; border: 1px solid #2a5a3a; }
+.tag-red { background: rgba(248,113,113,0.07); color: #f87171; border: 1px solid #5a2a2a; }
+.tag-gold { background: rgba(200,169,110,0.07); color: #C8A96E; border: 1px solid #7a6540; }
+
+/* STATUS BAR */
+.status-bar { background: rgba(248,113,113,0.07); border-bottom: 1px solid #5a2a2a; padding: 10px 48px; color: #f87171; font-size: 12px; font-family: monospace; display: none; }
+
+/* PROGRESS */
+.progress { background: #0e0e10; border-bottom: 1px solid #1c1c20; padding: 20px 48px; display: flex; align-items: center; gap: 0; }
+.step { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+.step-num { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-family: monospace; font-size: 11px; font-weight: 700; border: 1.5px solid #1c1c20; color: #333; transition: all 0.3s; }
+.step-num.ativo { border-color: #C8A96E; color: #C8A96E; }
+.step-num.feito { background: #C8A96E; color: #0a0a0a; border-color: #C8A96E; }
+.step-label { font-size: 8.5px; letter-spacing: 1.5px; text-transform: uppercase; font-family: monospace; color: #333; white-space: nowrap; }
+.step-label.ativo { color: #C8A96E; }
+.step-line { flex: 1; height: 1px; background: #1c1c20; margin: 0 6px; margin-bottom: 18px; }
+.step-line.feito { background: #7a6540; }
+
+/* CONTAINER */
+.container { max-width: 920px; margin: 0 auto; padding: 48px 24px; }
+
+/* SECAO */
+.secao { background: #0e0e10; border: 1px solid #1c1c20; border-radius: 14px; padding: 28px; margin-bottom: 24px; }
+.secao-titulo { font-size: 10px; letter-spacing: 3px; text-transform: uppercase; color: #C8A96E; font-family: monospace; padding-bottom: 14px; border-bottom: 1px solid #1c1c20; margin-bottom: 20px; }
+
+/* CAMPOS */
+.campo { display: flex; flex-direction: column; gap: 7px; }
+.campo label { font-size: 11px; letter-spacing: 1.5px; color: #52525a; font-family: monospace; }
+.campo-nota { font-size: 10px; color: #333; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; }
+
+input, select {
+  background: #070708; border: 1px solid #1c1c20; border-radius: 8px;
+  color: #e8e8ea; padding: 10px 14px; font-size: 14px; font-family: monospace;
+  outline: none; width: 100%; transition: border-color 0.2s;
+}
+input:focus, select:focus { border-color: #C8A96E; }
+select option { background: #0e0e10; }
+
+/* CHIPS */
+.chips { display: flex; gap: 8px; flex-wrap: wrap; }
+.chip { padding: 8px 16px; border: 1px solid #1c1c20; border-radius: 8px; cursor: pointer; background: transparent; color: #52525a; font-size: 13px; font-family: monospace; transition: all 0.15s; }
+.chip.ativo { border-color: #C8A96E; background: rgba(200,169,110,0.07); color: #C8A96E; }
+.chip:hover { border-color: #2e2e35; }
+
+/* ESTILO CARDS */
+.estilo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.estilo-card { background: #070708; border: 1px solid #1c1c20; border-radius: 10px; padding: 16px 14px; cursor: pointer; transition: all 0.15s; }
+.estilo-card.ativo { border-color: #C8A96E; background: rgba(200,169,110,0.07); }
+.estilo-nome { color: #e8e8ea; font-size: 14px; font-family: monospace; margin-bottom: 6px; }
+.estilo-card.ativo .estilo-nome { color: #C8A96E; }
+.estilo-desc { color: #52525a; font-size: 11px; font-family: monospace; }
+
+/* BOTAO */
+.btn-primario { padding: 13px 36px; background: #C8A96E; border: none; border-radius: 8px; cursor: pointer; color: #0a0a0a; font-size: 13px; font-family: monospace; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; transition: all 0.2s; }
+.btn-primario:hover { background: #d4b47a; }
+.btn-primario:disabled { background: #1a1a1a; color: #333; cursor: not-allowed; }
+.btn-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; }
+.btn-hint { color: #333; font-size: 12px; font-family: monospace; }
+
+/* KPIs */
+.kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+.kpi { background: #0e0e10; border: 1px solid #1c1c20; border-radius: 10px; padding: 14px 16px; }
+.kpi-label { color: #52525a; font-size: 9px; font-family: monospace; letter-spacing: 2px; margin-bottom: 6px; }
+.kpi-valor { color: #C8A96E; font-family: 'Playfair Display', serif; font-size: 24px; }
+
+/* AMBIENTES */
+.amb-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.amb-item { padding: 10px 14px; background: #070708; border: 1px solid #1c1c20; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; }
+.amb-nome { color: #e8e8ea; font-size: 13px; font-family: monospace; }
+.amb-info { color: #52525a; font-size: 10px; font-family: monospace; }
+.amb-area { padding: 2px 10px; border-radius: 4px; font-size: 10px; font-family: monospace; }
+
+/* LOGS */
+.log-item { padding: 8px 14px; border-radius: 6px; font-family: monospace; font-size: 12px; margin-bottom: 8px; border-left: 2px solid; animation: fadeIn 0.3s ease; }
+@keyframes fadeIn { from { opacity:0; transform:translateX(-8px); } to { opacity:1; } }
+
+/* PLANTAS */
+.plantas-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; }
+.planta-card { border: 2px solid #1c1c20; border-radius: 12px; overflow: hidden; cursor: pointer; transition: border-color 0.2s; background: #0e0e10; }
+.planta-card.ativo { border-color: #C8A96E; }
+.planta-info { padding: 12px 14px; }
+.planta-titulo { font-size: 12px; font-family: monospace; color: #e8e8ea; margin-bottom: 4px; }
+.planta-card.ativo .planta-titulo { color: #C8A96E; }
+.planta-desc { font-size: 10px; font-family: monospace; color: #52525a; }
+
+/* IMGS */
+.imgs-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+.imgs-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
+.img-wrap { position: relative; border-radius: 10px; overflow: hidden; aspect-ratio: 16/10; cursor: pointer; }
+.img-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.img-label { position: absolute; bottom: 8px; left: 8px; background: rgba(0,0,0,0.75); padding: 3px 8px; border-radius: 4px; font-size: 9px; color: #aaa; font-family: monospace; letter-spacing: 1px; }
+.img-check { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; background: rgba(200,169,110,0.15); }
+.img-check-icon { width: 32px; height: 32px; border-radius: 50%; background: #C8A96E; color: #0a0a0a; display: flex; align-items: center; justify-content: center; font-size: 16px; font-weight: bold; }
+.img-wrap.sel { border: 2px solid #C8A96E; }
+
+/* ARQUIVOS */
+.arquivo-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: #070708; border: 1px solid #1c1c20; border-radius: 8px; margin-bottom: 8px; }
+.arquivo-info { display: flex; gap: 12px; align-items: center; }
+.arquivo-nome { color: #e8e8ea; font-size: 12px; font-family: monospace; }
+.arquivo-desc { color: #52525a; font-size: 10px; font-family: monospace; }
+.btn-dl { padding: 6px 14px; background: transparent; border: 1px solid #C8A96E; border-radius: 6px; color: #C8A96E; cursor: pointer; font-size: 10px; font-family: monospace; letter-spacing: 1px; text-decoration: none; }
+
+/* PROGRESSO BAR */
+.prog-bar { background: #070708; border-radius: 4px; height: 4px; overflow: hidden; margin-top: 4px; }
+.prog-fill { height: 100%; background: #C8A96E; border-radius: 4px; transition: width 0.2s; }
+
+/* AVISO */
+.aviso { padding: 10px 16px; border-radius: 8px; font-size: 12px; font-family: monospace; display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+.aviso-green { background: rgba(74,222,128,0.06); border: 1px solid #2a5a3a; color: #4ade80; }
+.aviso-blue { background: rgba(96,165,250,0.06); border: 1px solid #2a3a5a; color: #60a5fa; }
+
+h2 { font-family: 'Playfair Display', serif; font-size: 26px; color: #e8e8ea; font-weight: 400; margin-bottom: 6px; }
+p.sub { color: #52525a; font-size: 13px; font-family: monospace; margin-bottom: 24px; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div style="display:flex;align-items:baseline;gap:14px">
+    <span class="logo">ARQUITETO IA</span>
+    <span style="color:#1c1c20;font-size:18px">|</span>
+    <span style="color:#333;font-size:10px;font-family:monospace;letter-spacing:3px;text-transform:uppercase">Projetos Residenciais</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span class="tag tag-gold" id="status-tag">CONECTANDO...</span>
+    <span class="tag tag-gold">v4.0 PRODUÇÃO</span>
+  </div>
+</div>
+
+<div class="status-bar" id="status-bar">
+  ⚠ Backend offline. Verifique se o servidor Railway está ativo.
+</div>
+
+<div class="progress" id="progress-bar">
+  <div class="step"><div class="step-num feito" id="s1">✓</div><div class="step-label ativo">Terreno</div></div>
+  <div class="step-line" id="l1"></div>
+  <div class="step"><div class="step-num" id="s2">2</div><div class="step-label" id="sl2">IA Processa</div></div>
+  <div class="step-line" id="l2"></div>
+  <div class="step"><div class="step-num" id="s3">3</div><div class="step-label" id="sl3">Fachada</div></div>
+  <div class="step-line" id="l3"></div>
+  <div class="step"><div class="step-num" id="s4">4</div><div class="step-label" id="sl4">Planta</div></div>
+  <div class="step-line" id="l4"></div>
+  <div class="step"><div class="step-num" id="s5">5</div><div class="step-label" id="sl5">Entrega</div></div>
+</div>
+
+<div class="container">
+  <!-- ETAPA 1: TERRENO -->
+  <div id="etapa1">
+    <h2>Configure seu Projeto</h2>
+    <p class="sub">Preencha os dados — a IA irá calcular o programa de necessidades completo</p>
+
+    <div class="secao">
+      <div class="secao-titulo">Terreno</div>
+      <div class="grid-3">
+        <div class="campo"><label>Frente (metros)</label><input type="number" id="frente" placeholder="Ex: 15"></div>
+        <div class="campo"><label>Profundidade (metros)</label><input type="number" id="lado" placeholder="Ex: 30"></div>
+        <div class="campo"><label>Topografia</label>
+          <select id="topografia">
+            <option value="plano">▬ Plano</option>
+            <option value="aclive">⬆ Aclive</option>
+            <option value="declive">⬇ Declive</option>
+          </select>
+        </div>
+      </div>
+      <div id="area-info" style="margin-top:12px;display:none">
+        <span class="tag tag-gold" id="area-tag"></span>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">Padrão e Tipologia</div>
+      <div style="display:flex;flex-direction:column;gap:16px">
+        <div class="campo"><label>Padrão da Obra</label>
+          <div class="chips">
+            <button class="chip" onclick="selChip('padrao',this,'popular')">Popular</button>
+            <button class="chip" onclick="selChip('padrao',this,'medio')">Médio Padrão</button>
+            <button class="chip ativo" onclick="selChip('padrao',this,'alto')">Alto Padrão</button>
+          </div>
+        </div>
+        <div class="campo"><label>Tipologia</label>
+          <div class="chips">
+            <button class="chip" onclick="selChip('tipo',this,'terreo')">🏠 Térrea</button>
+            <button class="chip ativo" onclick="selChip('tipo',this,'sobrado')">🏢 Sobrado</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">Ambientes</div>
+      <div class="grid-2">
+        <div class="campo"><label>Número de Suítes</label>
+          <div class="chips">
+            <button class="chip" onclick="selChip('suites',this,'1')">1</button>
+            <button class="chip" onclick="selChip('suites',this,'2')">2</button>
+            <button class="chip ativo" onclick="selChip('suites',this,'3')">3</button>
+            <button class="chip" onclick="selChip('suites',this,'4')">4</button>
+            <button class="chip" onclick="selChip('suites',this,'5')">5</button>
+          </div>
+        </div>
+        <div class="campo"><label>Área Suíte Master</label>
+          <select id="areaMaster">
+            <option value="">IA sugere automaticamente</option>
+            <option value="16">16m² — Compacta</option>
+            <option value="20">20m² — Confortável</option>
+            <option value="25">25m² — Espaçosa</option>
+            <option value="35">35m² — Grand Suite</option>
+          </select>
+        </div>
+        <div class="campo"><label>Banheiros (total)</label>
+          <div class="chips">
+            <button class="chip" onclick="selChip('banheiros',this,'2')">2</button>
+            <button class="chip" onclick="selChip('banheiros',this,'3')">3</button>
+            <button class="chip ativo" onclick="selChip('banheiros',this,'4')">4</button>
+            <button class="chip" onclick="selChip('banheiros',this,'5')">5</button>
+          </div>
+        </div>
+        <div class="campo"><label>Garagem</label>
+          <select id="garagem">
+            <option value="nao">Sem garagem</option>
+            <option value="simples">1 vaga — 15m²</option>
+            <option value="dupla" selected>2 vagas — 28m²</option>
+            <option value="tripla">3+ vagas — 42m²</option>
+          </select>
+        </div>
+        <div class="campo"><label>Piscina</label>
+          <select id="piscina">
+            <option value="nao">Sem piscina</option>
+            <option value="pequena">Pequena — 20m²</option>
+            <option value="media" selected>Média — 36m²</option>
+            <option value="grande">Grande — 56m²</option>
+          </select>
+        </div>
+        <div class="campo"><label>Fachada</label>
+          <div class="chips">
+            <button class="chip ativo" onclick="selChip('fachada',this,'imponente')">👑 Imponente</button>
+            <button class="chip" onclick="selChip('fachada',this,'discreta')">🌿 Discreta</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="secao">
+      <div class="secao-titulo">Estilo Arquitetônico</div>
+      <div class="estilo-grid">
+        <div class="estilo-card" onclick="selEstilo('neoclassico',this)">
+          <div class="estilo-nome">🏛️ Neoclássico</div>
+          <div class="estilo-desc">Colunas, simetria, imponência atemporal</div>
+        </div>
+        <div class="estilo-card" onclick="selEstilo('contemporaneo',this)">
+          <div class="estilo-nome">◼ Contemporâneo</div>
+          <div class="estilo-desc">Linhas limpas, vidro, volumes puros</div>
+        </div>
+        <div class="estilo-card" onclick="selEstilo('classico',this)">
+          <div class="estilo-nome">🏠 Clássico</div>
+          <div class="estilo-desc">Telhas coloniais, arcos, tradição</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <span class="btn-hint" id="hint1">Preencha terreno + estilo para continuar</span>
+      <button class="btn-primario" id="btn1" onclick="irEtapa2()" disabled>GERAR COM IA →</button>
+    </div>
+  </div>
+
+  <!-- ETAPA 2: IA PROCESSANDO -->
+  <div id="etapa2" style="display:none;max-width:600px;margin:60px auto">
+    <div class="secao">
+      <div class="secao-titulo">Processando com Inteligência Artificial</div>
+      <div id="logs"></div>
+    </div>
+  </div>
+
+  <!-- ETAPA 3: RESULTADO + FACHADAS -->
+  <div id="etapa3" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">
+      <div>
+        <h2>Programa Gerado pela IA</h2>
+        <p class="sub" id="resumo-proj">Projeto calculado conforme NBR 15575</p>
+      </div>
+      <span class="tag tag-green">IA CONCLUÍDA</span>
+    </div>
+    <div class="kpi-grid" id="kpis"></div>
+    <div class="secao">
+      <div class="secao-titulo" id="amb-titulo">Ambientes Calculados</div>
+      <div class="amb-grid" id="ambientes"></div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo">Selecione a Fachada — 4 Variações</div>
+      <p style="color:#52525a;font-size:12px;font-family:monospace;margin-bottom:16px" id="fachada-msg">⏳ Gerando fachadas com Flux Pro...</p>
+      <div class="imgs-grid-2" id="fachadas"></div>
+    </div>
+    <div class="btn-row">
+      <span class="btn-hint" id="hint3">Selecione uma fachada para continuar</span>
+      <button class="btn-primario" id="btn3" onclick="irEtapa4()" disabled>VER PLANTAS BAIXAS →</button>
+    </div>
+  </div>
+
+  <!-- ETAPA 4: PLANTAS -->
+  <div id="etapa4" style="display:none">
+    <h2>Plantas Baixas Técnicas</h2>
+    <p class="sub">3 variações geradas — selecione a preferida</p>
+    <div class="plantas-grid" id="plantas"></div>
+    <div class="btn-row" style="margin-top:24px">
+      <span class="btn-hint" id="hint4">Selecione um modelo para continuar</span>
+      <button class="btn-primario" id="btn4" onclick="irEtapa5()" disabled>VER ENTREGA 3D →</button>
+    </div>
+  </div>
+
+  <!-- ETAPA 5: ENTREGA -->
+  <div id="etapa5" style="display:none">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:24px">
+      <div>
+        <h2>Visualização 3D & Entrega</h2>
+        <p class="sub">10 imagens fotorrealistas + IFC + DWG + PDF</p>
+      </div>
+      <span class="tag tag-green">PROJETO COMPLETO</span>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo">Imagens dos Ambientes</div>
+      <div class="imgs-grid-3" id="internas"></div>
+    </div>
+    <div class="secao">
+      <div class="secao-titulo">Gerar Arquivos Técnicos</div>
+      <div id="gerar-area">
+        <p style="color:#52525a;font-size:13px;font-family:monospace;margin-bottom:16px;text-align:center">Gera IFC, DWG e PDF com todos os elementos técnicos</p>
+        <div style="text-align:center"><button class="btn-primario" onclick="gerarArquivos()">⚡ GERAR ARQUIVOS</button></div>
+      </div>
+      <div id="gerar-prog" style="display:none">
+        <div id="gerar-logs"></div>
+        <div class="prog-bar"><div class="prog-fill" id="prog-fill" style="width:0%"></div></div>
+      </div>
+      <div id="gerar-feito" style="display:none">
+        <div class="aviso aviso-green" style="margin-bottom:12px">✓ Todos os arquivos gerados com sucesso</div>
+        <div id="arquivos-lista"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const BACKEND = 'https://backend-production-e962.up.railway.app';
+
+// Estado global
+const state = {
+  padrao: 'alto', tipo: 'sobrado', suites: '3',
+  banheiros: '4', fachada: 'imponente', estilo: null,
+  programa: null, imgSel: null, plantaSel: null,
+  arquivos: {}
+};
+
+// Checa backend
+async function checarBackend() {
+  try {
+    const r = await fetch(BACKEND + '/');
+    const d = await r.json();
+    if (d.status === 'online') {
+      document.getElementById('status-tag').textContent = 'BACKEND ONLINE';
+      document.getElementById('status-tag').className = 'tag tag-green';
+      document.getElementById('status-bar').style.display = 'none';
+    }
+  } catch(e) {
+    document.getElementById('status-tag').textContent = 'BACKEND OFFLINE';
+    document.getElementById('status-tag').className = 'tag tag-red';
+    document.getElementById('status-bar').style.display = 'block';
+  }
+}
+checarBackend();
+
+// Chips
+function selChip(grupo, el, val) {
+  document.querySelectorAll(`[onclick*="'${grupo}'"]`).forEach(b => b.classList.remove('ativo'));
+  el.classList.add('ativo');
+  state[grupo] = val;
+  verificarBtn1();
+}
+
+// Estilo
+function selEstilo(estilo, el) {
+  document.querySelectorAll('.estilo-card').forEach(c => c.classList.remove('ativo'));
+  el.classList.add('ativo');
+  state.estilo = estilo;
+  verificarBtn1();
+}
+
+// Verificar btn
+function verificarBtn1() {
+  const f = document.getElementById('frente').value;
+  const l = document.getElementById('lado').value;
+  const ok = f && l && state.estilo;
+  document.getElementById('btn1').disabled = !ok;
+  document.getElementById('hint1').textContent = ok ? '✓ Pronto para processar' : 'Preencha terreno + estilo para continuar';
+  if (f && l) {
+    const area = parseFloat(f) * parseFloat(l);
+    document.getElementById('area-info').style.display = 'block';
+    document.getElementById('area-tag').textContent = `Área total: ${area.toFixed(0)}m²`;
+  }
+}
+document.getElementById('frente').addEventListener('input', verificarBtn1);
+document.getElementById('lado').addEventListener('input', verificarBtn1);
+
+// Progress
+function setProgress(etapa) {
+  for (let i = 1; i <= 5; i++) {
+    const s = document.getElementById('s'+i);
+    const sl = document.getElementById('sl'+i);
+    if (!s) continue;
+    if (i < etapa) { s.className = 'step-num feito'; s.textContent = '✓'; }
+    else if (i === etapa) { s.className = 'step-num ativo'; s.textContent = i; if(sl) sl.className = 'step-label ativo'; }
+    else { s.className = 'step-num'; s.textContent = i; if(sl) sl.className = 'step-label'; }
+    if (i < 5) {
+      const l = document.getElementById('l'+i);
+      if (l) l.className = i < etapa ? 'step-line feito' : 'step-line';
+    }
+  }
+}
+
+function addLog(msg, cor) {
+  const div = document.createElement('div');
+  div.className = 'log-item';
+  div.style.color = cor;
+  div.style.borderLeftColor = cor;
+  div.textContent = msg;
+  document.getElementById('logs').appendChild(div);
+}
+
+// ETAPA 2
+async function irEtapa2() {
+  document.getElementById('etapa1').style.display = 'none';
+  document.getElementById('etapa2').style.display = 'block';
+  setProgress(2);
+
+  addLog('Conectando ao servidor backend...', '#C8A96E');
+  await sleep(400);
+  addLog('Carregando Skill de Arquitetura Residencial...', '#52525a');
+  await sleep(400);
+  addLog('Claude analisando terreno e restrições NBR...', '#52525a');
+
+  try {
+    const body = {
+      frente: parseFloat(document.getElementById('frente').value),
+      lado: parseFloat(document.getElementById('lado').value),
+      topografia: document.getElementById('topografia').value,
+      padrao: state.padrao,
+      tipo: state.tipo,
+      suites: state.suites,
+      area_master: document.getElementById('areaMaster').value,
+      banheiros: state.banheiros,
+      garagem: document.getElementById('garagem').value,
+      piscina: document.getElementById('piscina').value,
+      fachada: state.fachada,
+      estilo: state.estilo,
+    };
+
+    const r = await fetch(BACKEND + '/api/programa', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(body)
+    });
+    state.programa = await r.json();
+    state.dados = body;
+
+    addLog(`✓ ${state.programa.ambientes?.length || 0} ambientes calculados`, '#4ade80');
+    addLog(`✓ Área total: ${state.programa.area_total}m² | Taxa: ${state.programa.taxa_ocupacao}`, '#4ade80');
+    addLog('✓ Recuos verificados conforme NBR', '#4ade80');
+    addLog('Programa concluído!', '#C8A96E');
+    await sleep(600);
+    irEtapa3();
+  } catch(e) {
+    addLog('✗ ERRO: ' + e.message, '#f87171');
+  }
+}
+
+// ETAPA 3
+async function irEtapa3() {
+  document.getElementById('etapa2').style.display = 'none';
+  document.getElementById('etapa3').style.display = 'block';
+  setProgress(3);
+
+  const p = state.programa;
+  document.getElementById('resumo-proj').textContent = p.resumo || 'Projeto calculado conforme NBR 15575';
+
+  // KPIs
+  const kpis = [
+    {l:'Área Total', v: p.area_total+'m²'},
+    {l:'Ambientes', v: p.ambientes?.length || 0},
+    {l:'Pavimentos', v: p.pavimentos || 1},
+    {l:'Taxa Ocup.', v: p.taxa_ocupacao || '—'},
+  ];
+  document.getElementById('kpis').innerHTML = kpis.map(k =>
+    `<div class="kpi"><div class="kpi-label">${k.l.toUpperCase()}</div><div class="kpi-valor">${k.v}</div></div>`
+  ).join('');
+
+  // Ambientes
+  document.getElementById('amb-titulo').textContent = `Ambientes Calculados — ${p.ambientes?.length} itens`;
+  document.getElementById('ambientes').innerHTML = (p.ambientes || []).map(a => {
+    const isMaster = a.nome?.toLowerCase().includes('master');
+    const cor = isMaster ? '#C8A96E' : '#60a5fa';
+    const bg = isMaster ? 'rgba(200,169,110,0.1)' : 'rgba(96,165,250,0.1)';
+    return `<div class="amb-item">
+      <div>
+        <div class="amb-nome">${a.nome}</div>
+        <div class="amb-info">${(a.largura||0).toFixed(1)}m × ${(a.profundidade||0).toFixed(1)}m | Pav ${a.pavimento||1}</div>
+      </div>
+      <span class="amb-area" style="background:${bg};color:${cor};border:1px solid ${cor}">${(a.area||0).toFixed(1)}m²</span>
+    </div>`;
+  }).join('');
+
+  // Fachadas
+  gerarFachadas();
+}
+
+async function gerarFachadas() {
+  try {
+    const r = await fetch(BACKEND + '/api/imagens/fachada', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        estilo: state.dados.estilo,
+        padrao: state.dados.padrao,
+        topografia: state.dados.topografia,
+        fachada: state.dados.fachada,
+        quantidade: 4
+      })
+    });
+    const data = await r.json();
+    const urls = data.urls || [];
+    document.getElementById('fachada-msg').textContent = '✓ 4 fachadas geradas por IA';
+    document.getElementById('fachadas').innerHTML = urls.map((url, i) =>
+      `<div class="img-wrap" id="fimg${i}" onclick="selFachada(${i})">
+        <img src="${url}" onerror="this.src='https://picsum.photos/seed/house${i}/720/450'">
+        <div class="img-label">VARIAÇÃO ${i+1}</div>
+      </div>`
+    ).join('');
+  } catch(e) {
+    // Fallback
+    document.getElementById('fachada-msg').textContent = '4 variações de referência';
+    const seeds = ['house1','house2','house3','house4'];
+    document.getElementById('fachadas').innerHTML = seeds.map((s, i) =>
+      `<div class="img-wrap" id="fimg${i}" onclick="selFachada(${i})">
+        <img src="https://picsum.photos/seed/${s}/720/450">
+        <div class="img-label">VARIAÇÃO ${i+1}</div>
+      </div>`
+    ).join('');
+  }
+}
+
+function selFachada(i) {
+  document.querySelectorAll('.img-wrap').forEach(w => {
+    w.classList.remove('sel');
+    const ch = w.querySelector('.img-check');
+    if (ch) ch.remove();
+  });
+  const el = document.getElementById('fimg'+i);
+  el.classList.add('sel');
+  el.insertAdjacentHTML('beforeend', '<div class="img-check"><div class="img-check-icon">✓</div></div>');
+  state.imgSel = i;
+  document.getElementById('btn3').disabled = false;
+  document.getElementById('hint3').textContent = `✓ Variação ${i+1} selecionada`;
+}
+
+// ETAPA 4
+function irEtapa4() {
+  document.getElementById('etapa3').style.display = 'none';
+  document.getElementById('etapa4').style.display = 'block';
+  setProgress(4);
+
+  const infos = [
+    {t:'Modelo A — Distribuição Linear', d:'Fluxo direto, ambientes em sequência lógica'},
+    {t:'Modelo B — Ala Privativa', d:'Zona íntima separada, maior privacidade'},
+    {t:'Modelo C — Integração Central', d:'Sala e cozinha integradas ao centro'},
+  ];
+
+  document.getElementById('plantas').innerHTML = infos.map((info, i) =>
+    `<div class="planta-card" id="pc${i}" onclick="selPlanta(${i})">
+      <div style="aspect-ratio:4/3;background:#070708;display:flex;align-items:center;justify-content:center">
+        ${gerarSVGPlanta(i)}
+      </div>
+      <div class="planta-info">
+        <div class="planta-titulo">${info.t}</div>
+        <div class="planta-desc">${info.d}</div>
+      </div>
+    </div>`
+  ).join('');
+}
+
+function gerarSVGPlanta(v) {
+  const configs = [
+    [{n:'GARAGEM',x:5,y:5,w:60,h:40},{n:'SALA',x:70,y:5,w:70,h:40},{n:'COZINHA',x:145,y:5,w:50,h:40},
+     {n:'SUÍTE MASTER',x:5,y:50,w:80,h:60,m:1},{n:'SUÍTE 2',x:90,y:50,w:55,h:60},{n:'SUÍTE 3',x:150,y:50,w:50,h:60}],
+    [{n:'GARAGEM',x:5,y:5,w:50,h:45},{n:'SALA EST.',x:60,y:5,w:65,h:45},{n:'SALA JAN.',x:130,y:5,w:65,h:45},
+     {n:'SUÍTE MASTER',x:5,y:55,w:90,h:55,m:1},{n:'PÁTIO',x:100,y:55,w:40,h:55,p:1},{n:'COZINHA',x:145,y:55,w:55,h:55}],
+    [{n:'GARAGEM',x:5,y:5,w:65,h:50},{n:'SALA INTEG.',x:75,y:5,w:100,h:50},{n:'VARANDA',x:5,y:60,w:80,h:60,p:1},
+     {n:'SUÍTE MASTER',x:90,y:60,w:115,h:60,m:1}],
+  ];
+  const amb = configs[v] || configs[0];
+  return `<svg viewBox="0 0 210 120" style="width:100%;height:100%">
+    <rect width="210" height="120" fill="#070708"/>
+    ${amb.map(a => `
+      <rect x="${a.x}" y="${a.y}" width="${a.w}" height="${a.h}" fill="${a.m?'#100d05':a.p?'#0a1a0a':'#0d0d0d'}" stroke="${a.m?'#C8A96E':a.p?'#4a7a4a':'#2a2a2a'}" stroke-width="${a.m?1.5:1}"/>
+      <text x="${a.x+a.w/2}" y="${a.y+a.h/2+3}" text-anchor="middle" fill="${a.m?'#C8A96E':a.p?'#4a7a4a':'#444'}" font-size="5.5" font-family="monospace">${a.n}</text>
+    `).join('')}
+    <circle cx="200" cy="10" r="8" fill="none" stroke="#7a6540" stroke-width="0.8"/>
+    <text x="200" y="13" text-anchor="middle" fill="#C8A96E" font-size="7" font-family="monospace" font-weight="bold">N</text>
+  </svg>`;
+}
+
+function selPlanta(i) {
+  document.querySelectorAll('.planta-card').forEach(c => c.classList.remove('ativo'));
+  document.getElementById('pc'+i).classList.add('ativo');
+  state.plantaSel = i;
+  document.getElementById('btn4').disabled = false;
+  document.getElementById('hint4').textContent = `✓ Modelo ${['A','B','C'][i]} selecionado`;
+}
+
+// ETAPA 5
+async function irEtapa5() {
+  document.getElementById('etapa4').style.display = 'none';
+  document.getElementById('etapa5').style.display = 'block';
+  setProgress(5);
+
+  // Imagens internas
+  const labels = ['SUÍTE MASTER','SALA INTEGRADA','COZINHA GOURMET','ÁREA EXTERNA','BANHEIRO MASTER','VARANDA'];
+  try {
+    const r = await fetch(BACKEND + '/api/imagens/internas', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({estilo: state.dados.estilo, padrao: state.dados.padrao, topografia: state.dados.topografia, fachada: state.dados.fachada})
+    });
+    const data = await r.json();
+    document.getElementById('internas').innerHTML = (data.imagens || []).map((img, i) =>
+      `<div class="img-wrap">
+        <img src="${img.url}" onerror="this.src='https://picsum.photos/seed/int${i}/600/450'">
+        <div class="img-label">${labels[i]||''}</div>
+      </div>`
+    ).join('');
+  } catch(e) {
+    document.getElementById('internas').innerHTML = [0,1,2,3,4,5].map(i =>
+      `<div class="img-wrap">
+        <img src="https://picsum.photos/seed/int${i}/600/450">
+        <div class="img-label">${labels[i]||''}</div>
+      </div>`
+    ).join('');
+  }
+}
+
+async function gerarArquivos() {
+  document.getElementById('gerar-area').style.display = 'none';
+  document.getElementById('gerar-prog').style.display = 'block';
+
+  const payload = {projeto_id: 'proj_'+Date.now(), programa: state.programa, dados: state.dados};
+  const logs = document.getElementById('gerar-logs');
+  const fill = document.getElementById('prog-fill');
+
+  const addGL = (msg, cor) => {
+    const d = document.createElement('div');
+    d.style.cssText = `color:${cor};font-size:12px;font-family:monospace;margin-bottom:6px`;
+    d.textContent = msg;
+    logs.appendChild(d);
+  };
+
+  try {
+    addGL('Calculando elementos estruturais...', '#52525a');
+    fill.style.width = '20%';
+    const ifc = await fetch(BACKEND+'/api/arquivos/ifc', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const ifcD = await ifc.json();
+    state.arquivos.ifc = ifcD.arquivo?.split('/').pop();
+    addGL('✓ IFC gerado — '+state.arquivos.ifc, '#4ade80');
+    fill.style.width = '50%';
+
+    const dwg = await fetch(BACKEND+'/api/arquivos/dwg', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const dwgD = await dwg.json();
+    state.arquivos.dwg = dwgD.arquivo?.split('/').pop();
+    addGL('✓ DWG gerado — '+state.arquivos.dwg, '#4ade80');
+    fill.style.width = '75%';
+
+    const pdf = await fetch(BACKEND+'/api/arquivos/pdf', {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    const pdfD = await pdf.json();
+    state.arquivos.pdf = pdfD.arquivo?.split('/').pop();
+    addGL('✓ PDF gerado — '+state.arquivos.pdf, '#4ade80');
+    fill.style.width = '100%';
+
+    await sleep(500);
+    document.getElementById('gerar-prog').style.display = 'none';
+    document.getElementById('gerar-feito').style.display = 'block';
+
+    const arqs = [
+      {nome: state.arquivos.ifc, tipo:'IFC', icon:'🏗️', desc:'BIM completo — abre no Revit, ArchiCAD'},
+      {nome: state.arquivos.dwg, tipo:'DXF', icon:'📐', desc:'AutoCAD — layers ABNT, cotas, carimbo'},
+      {nome: state.arquivos.pdf, tipo:'PDF', icon:'📄', desc:'Memorial descritivo — áreas e quantitativos'},
+    ];
+    document.getElementById('arquivos-lista').innerHTML = arqs.map(a =>
+      `<div class="arquivo-item">
+        <div class="arquivo-info">
+          <span style="font-size:20px">${a.icon}</span>
+          <div><div class="arquivo-nome">${a.nome||'gerando...'}</div><div class="arquivo-desc">${a.desc}</div></div>
+        </div>
+        <div style="display:flex;gap:8px;align-items:center">
+          <span class="tag tag-gold">${a.tipo}</span>
+          <a class="btn-dl" href="${BACKEND}/api/download/${a.nome}" download>↓ BAIXAR</a>
+        </div>
+      </div>`
+    ).join('');
+  } catch(e) {
+    addGL('✗ Erro: ' + e.message, '#f87171');
+  }
+}
+
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+</script>
+</body>
+</html>

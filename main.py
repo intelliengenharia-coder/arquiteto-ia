@@ -5,9 +5,11 @@ FastAPI + Claude API + Replicate (imagens) + IfcOpenShell (IFC) + ezdxf (DWG)
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import Optional, List
+from pathlib import Path
 import anthropic
 import replicate
 import os, json, uuid
@@ -747,6 +749,15 @@ async def download(filename: str):
         raise HTTPException(404, "Arquivo não encontrado")
     return FileResponse(str(caminho), filename=filename)
 
+
+# ─── SERVE O FRONTEND ────────────────────────────────────────────────────────
+@app.get("/app", response_class=HTMLResponse)
+async def frontend():
+    """Serve o app frontend diretamente"""
+    html_path = Path("static/index.html")
+    if html_path.exists():
+        return HTMLResponse(content=html_path.read_text())
+    return HTMLResponse("<h1>Frontend não encontrado</h1>")
 
 # ─── HEALTH CHECK ─────────────────────────────────────────────────────────────
 @app.get("/")
